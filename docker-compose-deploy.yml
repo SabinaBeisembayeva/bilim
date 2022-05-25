@@ -1,0 +1,81 @@
+version: "3.7"
+
+services:
+  backend:
+    build:
+      context: .
+    restart: always
+    volumes:
+      - static-data:/vol/web
+    env_file:
+      - ./.env
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    depends_on:
+      - db
+#  celery:
+#    build: .
+#    container_name: lightkassa-celery
+#    command: celery -A bilim worker -l INFO -Q default -c 4
+#    volumes:
+#      - '.:/code'
+#    depends_on:
+#      - db
+#      - redis
+#  celery-high:
+#    build: .
+#    container_name: lightkassa-celery-high
+#    command: celery -A bilim worker -l INFO -Q high -c 4
+#    volumes:
+#      - '.:/code'
+#    depends_on:
+#      - db
+#      - redis
+#  celery-beat:
+#    container_name: lightkassa-beat
+#    build: .
+#    command: celery -A webkassa beat -l info --pidfile=/tmp/celeryd.pid
+#    volumes:
+#      - '.:/code'
+#    depends_on:
+#      - db
+#      - redis
+#  redis:
+#    image: redis:6.2.5
+#    container_name: lightkassa-redis
+#    user: root
+#    command: redis-server --requirepass F1rstB1t
+#    restart: always
+#    volumes:
+#      - './storage/redis/data:/data'
+#    ports:
+#      - '6379:6379'
+  db:
+    image: postgres:13-alpine
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+
+  proxy:
+    build:
+      context: ./proxy
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - 80:8000
+    volumes:
+      - static-data:/vol/static
+
+volumes:
+  postgres-data:
+  static-data:
